@@ -8,9 +8,11 @@ void Stack<T>::push(const T& elem) {
 }
 
 template <typename T>
-void Stack<T>::pop() {
+T Stack<T>::pop() {
     if (!elements.empty()) {
+        T temp = elements.back();
         elements.pop_back();
+        return temp;
     } else {
         std::cerr << "Stack is empty, cannot pop!" << std::endl;
     }

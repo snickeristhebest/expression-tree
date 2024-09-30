@@ -24,8 +24,8 @@ void TreeNode::set_left(TreeNode *left) {
 }
 
 // Get the left child node
-TreeNode TreeNode::get_left() {
-    return *left;  // Return the dereferenced pointer
+TreeNode* TreeNode::get_left() {
+    return left;  // Return the dereferenced pointer
 }
 
 // Set the right child node
@@ -34,8 +34,8 @@ void TreeNode::set_right(TreeNode *right) {
 }
 
 // Get the right child node
-TreeNode TreeNode::get_right() {
-    return *right;  // Return the dereferenced pointer
+TreeNode* TreeNode::get_right() {
+    return right;  // Return the dereferenced pointer
 }
 
 // Set the operator value
