@@ -25,6 +25,8 @@ int main(int argc, char* argv[]) {
     // Read file line by line
     while (getline(inputFile, line)) {
         ExpressionTree tree = ExpressionTree(line);
+        tree.displayResults();
+
     }    
 
     // Close the file
