@@ -9,7 +9,7 @@ class ExpressionTree {
 private:
     TreeNode *root;
     Stack<TreeNode*> TreeNodeStack;  // Stack for treenode pointers
-    Stack<char> opStack;  // Stack for operator char
+    Stack<std::string> opStack;  // Stack for operator char
     bool treeValid;  // New member to track if the tree is valid
 
 public:
@@ -21,8 +21,8 @@ public:
 
     // Method to build the tree from the expression
     bool buildTree(const std::string &expression);
-    int precedence(char op);
-    bool processOperator(char op, Stack<TreeNode*>& nodeStack);
+    int precedence(const std::string& op);
+    bool processOperator(const std::string& op, Stack<TreeNode*>& nodeStack);
     double solve();
     double solve(TreeNode* node);
     void displayResults();

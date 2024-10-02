@@ -22,13 +22,14 @@ ExpressionTree::ExpressionTree(const std::string &expression) {
 // Function to build the tree from an expression
 bool ExpressionTree::buildTree(const std::string &expression) {
     Stack<TreeNode*> TreeNodeStack;
-    Stack<char> opStack;
+    Stack<std::string> opStack;  // Stack now holds strings to handle multi-character operators
     std::string temp = "";
 
     for (std::size_t i = 0; i < expression.length(); i++) {
         if (expression[i] == ' ') {
             continue;  // Ignore spaces
         }
+        
         if (i == 0 && !(isdigit(expression[i]) || expression[i] == '(')) {
             std::cerr << "Error: Expression must start with a digit or '('. Invalid character at position " << i << ": " << expression[i] << std::endl;
             return false;
@@ -39,28 +40,28 @@ bool ExpressionTree::buildTree(const std::string &expression) {
             expression[i] == '*' || expression[i] == '/' || 
             expression[i] == '(') {
             
-            // If a number is accumulated in `temp`, convert and push it
+            // Process accumulated number
             if (!temp.empty()) {
                 try {
-                    double num = std::stod(temp);  // Convert string to double
-                    temp = "";  // Reset temp for the next number
+                    double num = std::stod(temp);
+                    temp = "";
                     TreeNode* newNode = new TreeNode('#', num, true);  // Create a TreeNode for the number
-                    TreeNodeStack.push(newNode);  // Push the number node to the stack
+                    TreeNodeStack.push(newNode);
                 } catch (...) {
                     std::cerr << "Error: Failed to convert number from string: " << temp << std::endl;
                     return false;
                 }
             }
             
-            // Handle operator precedence before pushing the new operator
-            while (!opStack.isEmpty() && precedence(opStack.top()) >= precedence(expression[i]) && expression[i] != '(') {
+            // Handle operator precedence
+            while (!opStack.isEmpty() && precedence(opStack.top()) >= precedence(std::string(1, expression[i])) && expression[i] != '(') {
                 if (!processOperator(opStack.pop(), TreeNodeStack)) {
                     std::cerr << "Error: Failed to process operator: " << expression[i] << std::endl;
                     return false;
                 }
             }
             
-            opStack.push(expression[i]);  // Push the current operator or '('
+            opStack.push(std::string(1, expression[i]));  // Push operator or '(' as string
         
         // Handle digits and decimal point
         } else if (isdigit(expression[i]) || expression[i] == '.') {
@@ -80,27 +81,102 @@ bool ExpressionTree::buildTree(const std::string &expression) {
                 }
             }
             
-            // Process all operators until an opening parenthesis is found
-            while (!opStack.isEmpty() && opStack.top() != '(') {
+            // Process operators until an opening parenthesis is found
+            while (!opStack.isEmpty() && opStack.top() != "(") {
                 if (!processOperator(opStack.pop(), TreeNodeStack)) {
                     std::cerr << "Error: Failed to process operator inside parentheses." << std::endl;
                     return false;
                 }
             }
             
-            if (!opStack.isEmpty() && opStack.top() == '(') {
+            if (!opStack.isEmpty() && opStack.top() == "(") {
                 opStack.pop();  // Remove the '('
             } else {
                 std::cerr << "Error: Mismatched parentheses in expression." << std::endl;
                 return false;
             }
+
+        // Handle multi-character operators (<=, >=, ==)
+        } else if ((expression[i] == '<' || expression[i] == '>' || expression[i] == '=') && i + 1 < expression.length()) {
+            if (expression[i+1] == '=' || (expression[i] == '=' && expression[i+1] == '=')) {
+                std::string op = std::string(1, expression[i]) + std::string(1, expression[i+1]);  // Combine two characters
+                i++;  // Skip the next character since it's part of the operator
+
+                // Process any pending numbers
+                if (!temp.empty()) {
+                    try {
+                        double num = std::stod(temp);
+                        temp = "";
+                        TreeNode* newNode = new TreeNode('#', num, true);
+                        TreeNodeStack.push(newNode);
+                    } catch (...) {
+                        std::cerr << "Error: Failed to convert number from string: " << temp << std::endl;
+                        return false;
+                    }
+                }
+
+                // Handle operator precedence
+                while (!opStack.isEmpty() && precedence(opStack.top()) >= precedence(op)) {
+                    if (!processOperator(opStack.pop(), TreeNodeStack)) {
+                        std::cerr << "Error: Failed to process operator: " << op << std::endl;
+                        return false;
+                    }
+                }
+
+                opStack.push(op);  // Push the two-character operator
+
+            } else {
+                // Handle single-character '<' or '>'
+                temp += expression[i];
+            }
+
+        } else if ((expression[i] == '&' || expression[i] == '|') && i + 1 < expression.length()) {
+            if (expression[i+1] == '&' || expression[i+1] == '|') {
+                std::string op = std::string(1, expression[i]) + std::string(1, expression[i+1]);
+                i++;  // Move to the next character to skip the second '&' or '|'
+
+                // Process any pending numbers
+                if (!temp.empty()) {
+                    try {
+                        double num = std::stod(temp);
+                        temp = "";
+                        TreeNode* newNode = new TreeNode('#', num, true);
+                        TreeNodeStack.push(newNode);
+                    } catch (...) {
+                        std::cerr << "Error: Failed to convert number from string: " << temp << std::endl;
+                        return false;
+                    }
+                }
+
+                // Handle operator precedence and push to stack
+                while (!opStack.isEmpty() && precedence(opStack.top()) >= precedence(op)) {
+                    if (!processOperator(opStack.pop(), TreeNodeStack)) {
+                        std::cerr << "Error: Failed to process operator: " << op << std::endl;
+                        return false;
+                    }
+                }
+
+                opStack.push(op);  // Push the logical operator (&&, ||)
+            }
+        } else if (expression[i] == '!') {
+            std::string op = "!";
+
+            // Process operator precedence and push to stack
+            while (!opStack.isEmpty() && precedence(opStack.top()) >= precedence(op)) {
+                if (!processOperator(opStack.pop(), TreeNodeStack)) {
+                    std::cerr << "Error: Failed to process operator: " << op << std::endl;
+                    return false;
+                }
+            }
+
+            opStack.push(op);  // Push the NOT operator
         } else {
             std::cerr << "Error: Invalid character '" << expression[i] << "' in expression." << std::endl;
             return false;
         }
     }
-    
-    // Final number processing after the loop ends
+
+    // Process final number
     if (!temp.empty()) {
         try {
             double num = std::stod(temp);
@@ -132,27 +208,48 @@ bool ExpressionTree::buildTree(const std::string &expression) {
 }
 
 // Helper function to handle operator precedence
-int ExpressionTree::precedence(char op) {
-    if (op == '+' || op == '-') {
+int ExpressionTree::precedence(const std::string& op) {
+    if (op == "+" || op == "-") {
         return 1;
-    } else if (op == '*' || op == '/') {
+    } else if (op == "*" || op == "/") {
         return 2;
+    } else if (op == "<=" || op == ">=" || op == "<" || op == ">" || op == "==") {
+        return 3;
+    } else if (op == "&&") {
+        return 4;  // AND has higher precedence than OR
+    } else if (op == "||") {
+        return 3;  // OR has lower precedence
+    } else if (op == "!") {
+        return 5;  // NOT has the highest precedence
     } else {
         return 0;  // '(' has the lowest precedence
     }
 }
 
 // Helper function to process operators and update the expression tree
-bool ExpressionTree::processOperator(char op, Stack<TreeNode*>& nodeStack) {
+bool ExpressionTree::processOperator(const std::string& op, Stack<TreeNode*>& nodeStack) {
+    // '!' is a unary operator, so only pop one node
+    if (op == "!") {
+        if (nodeStack.size() < 1) {
+            std::cerr << "Error: Not enough operands for the operator '!'." << std::endl;
+            return false;
+        }
+        TreeNode* operandNode = nodeStack.pop();
+        TreeNode* opNode = new TreeNode(op[0], 0.0, false);  // Create operator node for '!'
+        opNode->set_left(operandNode);  // Unary operator only needs a left operand
+        nodeStack.push(opNode);
+        return true;
+    }
+    
     if (nodeStack.size() < 2) {
         std::cerr << "Error: Not enough operands for the operator '" << op << "'." << std::endl;
         return false;
     }
-    
+
     TreeNode* rightNode = nodeStack.pop();
     TreeNode* leftNode = nodeStack.pop();
 
-    TreeNode* opNode = new TreeNode(op, 0.0, false);  // Create operator node
+    TreeNode* opNode = new TreeNode(op[0], 0.0, false);  // Create operator node
     opNode->set_left(leftNode);
     opNode->set_right(rightNode);
 

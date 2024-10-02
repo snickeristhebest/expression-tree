@@ -10,12 +10,17 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
     
-    ifstream inputFile("expressions.txt");
-    Stack<TreeNode*> TreeNodeStack;  // Stack for treenode pointers
-    Stack<char> opStack;  // Stack for operator char
+    ifstream inputFile1("expressions.txt");
+    ifstream inputFile2("expressions_op.txt");
 
-    if(!inputFile.is_open()){
-        cerr << "Error opening file!" << endl;
+
+    if(!inputFile1.is_open()){
+        cerr << "Error opening file 1!" << endl;
+        return 1;
+    } 
+
+    if(!inputFile2.is_open()){
+        cerr << "Error opening file 2!" << endl;
         return 1;
     } 
 
@@ -23,14 +28,20 @@ int main(int argc, char* argv[]) {
 
     
     // Read file line by line
-    while (getline(inputFile, line)) {
+    while (getline(inputFile1, line)) {
         ExpressionTree tree = ExpressionTree(line);
         tree.displayResults();
 
     }    
+    while (getline(inputFile2, line)) {
+        ExpressionTree tree = ExpressionTree(line);
+        tree.displayResults();
+
+    }  
 
     // Close the file
-    inputFile.close();
+    inputFile1.close();
+    inputFile2.close();
 
     return 0;
 
